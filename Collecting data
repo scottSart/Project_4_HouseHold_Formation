@@ -1,0 +1,71 @@
+import pandas as pd
+import os
+
+# Set your folder path
+path = r"C:\Users\Sarth\OneDrive\JHU\HomeEconomics\Project 4 - Household Formation\Raw Data"
+
+# List of years with CSV files (note 2020 is missing)
+years = [2010, 2011, 2012, 2013, 2014, 2015, 2016,
+         2017, 2018, 2019, 2021, 2022, 2023]
+
+# ----------------------
+# 1) Create Long Dataset
+# ----------------------
+columns_to_keep = [
+    'GEO_ID','NAME','S1901_C01_001E','S1901_C01_002E','S1901_C01_003E','S1901_C01_004E',
+    'S1901_C01_005E','S1901_C01_006E','S1901_C01_007E','S1901_C01_008E','S1901_C01_009E',
+    'S1901_C01_010E','S1901_C01_011E','S1901_C01_012E','S1901_C01_013E'
+]
+
+df_list = []
+for year in years:
+    # Read each year's CSV
+    csv_path = os.path.join(path, f"{year}.csv")
+    df = pd.read_csv(csv_path, header=0)
+    
+    # Subset columns
+    df = df[columns_to_keep].copy()
+    
+    # Add the 'Year' column
+    df["Year"] = year
+    
+    df_list.append(df)
+
+# Concatenate into one long dataframe
+df_long = pd.concat(df_list, ignore_index=True)
+
+# Save the long dataframe
+long_output_path = os.path.join(path, "2010-2023_long.csv")
+df_long.to_csv(long_output_path, index=False)
+
+
+# ---------------------
+# 2) Create Wide Dataset
+# ---------------------
+# Here we include only 'S1901_C01_001E' and 'S1901_C01_013E' (if you only wanted S1901_C01_001E,
+# remove S1901_C01_013E below). We do an inner join on ['GEO_ID','NAME'].
+
+df_wide = None
+for year in years:
+    csv_path = os.path.join(path, f"{year}.csv")
+    
+    # Read only the necessary columns
+    df_temp = pd.read_csv(csv_path, usecols=["GEO_ID", "NAME", 
+                                             "S1901_C01_001E", "S1901_C01_013E"])
+    
+    # Rename columns to have a suffix of the year
+    df_temp.rename(columns={
+        "NAME": f"NAME_{year}",
+        "S1901_C01_001E": f"Household_ct_{year}",
+        "S1901_C01_013E": f"Mean_Income_{year}"
+    }, inplace=True)
+    
+    # Merge them one by one (inner join) on ['GEO_ID','NAME']
+    if df_wide is None:
+        df_wide = df_temp
+    else:
+        df_wide = df_wide.merge(df_temp, on=["GEO_ID"], how="outer")
+
+# Write out the final wide dataframe
+wide_output_path = os.path.join(path, "2010-2023_wide.csv")
+df_wide.to_csv(wide_output_path, index=False)
