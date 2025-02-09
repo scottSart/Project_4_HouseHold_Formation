@@ -67,5 +67,5 @@ for year in years:
         df_wide = df_wide.merge(df_temp, on=["GEO_ID"], how="outer")
 
 # Write out the final wide dataframe
-wide_output_path = os.path.join(path, "2010-2023_wide.csv")
+wide_output_path = os.path.join(path, "2010-2023_wide_v2.csv")
 df_wide.to_csv(wide_output_path, index=False)
